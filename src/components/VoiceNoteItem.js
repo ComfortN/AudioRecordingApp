@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { theme } from '../constants/theme';
@@ -39,18 +40,26 @@ export default function VoiceNoteItem({ note, onDelete }) {
     }, [sound]);
 
     const getAudioUri = async (uri) => {
-        if (Platform.OS === 'web') {
-            try {
-                // For web, we need to fetch the blob and create an object URL
+        try {
+            if (Platform.OS === 'web') {
                 const response = await fetch(uri);
                 const blob = await response.blob();
-                return URL.createObjectURL(blob);
-            } catch (error) {
-                console.error('Error creating blob URL:', error);
-                throw error;
+                const objectUrl = URL.createObjectURL(blob);
+                return objectUrl;
+            } else {
+                // For native platforms, validate the file path
+                if (uri.startsWith('file://')) {
+                    const fileInfo = await FileSystem.getInfoAsync(uri);
+                    if (!fileInfo.exists) {
+                        throw new Error('Audio file not found');
+                    }
+                }
+                return uri;
             }
+        } catch (error) {
+            console.error('Error getting audio URI:', error);
+            throw error;
         }
-        return uri; // Return original URI for native platforms
     };
 
     const loadSound = async () => {
@@ -148,11 +157,35 @@ export default function VoiceNoteItem({ note, onDelete }) {
     };
 
     const handleDelete = async () => {
-        // Stop playback before deleting
-        if (sound && isPlaying) {
-            await sound.stopAsync().catch(console.error);
+        try {
+            // Stop playback before deleting
+            if (sound) {
+                if (isPlaying) {
+                    await sound.stopAsync();
+                }
+                await sound.unloadAsync();
+                setSound(null);
+                setIsPlaying(false);
+            }
+            
+            // Platform-specific cleanup
+            if (Platform.OS === 'web') {
+                if (note.uri && note.uri.startsWith('blob:')) {
+                    URL.revokeObjectURL(note.uri);
+                }
+            } else if (note.uri.startsWith('file://')) {
+                await FileSystem.deleteAsync(note.uri, { idempotent: true });
+            }
+            
+            onDelete();
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            // Still proceed with the delete even if file deletion fails
+            onDelete();
         }
-        
+    };
+
+    const confirmDelete = () => {
         Alert.alert(
             'Delete Voice Note',
             'Are you sure you want to delete this voice note?',
@@ -163,12 +196,7 @@ export default function VoiceNoteItem({ note, onDelete }) {
                 },
                 {
                     text: 'Delete',
-                    onPress: async () => {
-                        if (sound) {
-                            await sound.unloadAsync().catch(console.error);
-                        }
-                        onDelete();
-                    },
+                    onPress: handleDelete,
                     style: 'destructive',
                 },
             ]
@@ -202,7 +230,7 @@ export default function VoiceNoteItem({ note, onDelete }) {
 
             <TouchableOpacity 
                 style={styles.deleteButton} 
-                onPress={handleDelete}
+                onPress={confirmDelete}
             >
                 <Ionicons 
                     name="trash-outline" 
