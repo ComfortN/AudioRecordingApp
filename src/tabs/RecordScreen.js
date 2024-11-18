@@ -5,12 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAudio } from '../context/AudioContext';
 import { colors } from '../constants/colors';
 import { theme } from '../constants/theme';
+import { useSettings } from '../context/SettingContext';
+import { getAudioConfig } from '../components/getAudioConfig';
 
 export default function RecordScreen({ navigation }) {
     const [recording, setRecording] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const [duration, setDuration] = useState(0);
     const { saveVoiceNote } = useAudio();
+    const { settings } = useSettings();
     
     // Cleanup effect
     useEffect(() => {
@@ -44,25 +47,27 @@ export default function RecordScreen({ navigation }) {
                     return;
                 }
             }
-
+    
             await Audio.setAudioModeAsync({
                 allowsRecordingIOS: true,
                 playsInSilentModeIOS: true,
             });
-
-            const { recording: newRecording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-            );
-
+    
+            // Get the audio configuration based on settings
+            const audioConfig = getAudioConfig(settings.highQualityRecording);
+    
+            // Create the recording with the proper configuration
+            const { recording: newRecording } = await Audio.Recording.createAsync(audioConfig);
+    
             setRecording(newRecording);
             setIsRecording(true);
             setDuration(0);
-
+    
             // Start duration timer
             const interval = setInterval(() => {
                 setDuration(d => d + 1);
             }, 1000);
-
+    
             newRecording.setOnRecordingStatusUpdate(status => {
                 if (!status.isRecording) {
                     clearInterval(interval);
