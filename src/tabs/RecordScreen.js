@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform, TextInput } from 'react-native';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudio } from '../context/AudioContext';
@@ -12,6 +12,7 @@ export default function RecordScreen({ navigation }) {
     const [recording, setRecording] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const [duration, setDuration] = useState(0);
+    const [recordingName, setRecordingName] = useState('');
     const { saveVoiceNote } = useAudio();
     const { settings } = useSettings();
     
@@ -39,6 +40,11 @@ export default function RecordScreen({ navigation }) {
     }, [recording]);
 
     const startRecording = async () => {
+        if (!recordingName.trim()) {
+            Alert.alert('Name Required', 'Please enter a name for your recording');
+            return;
+        }
+
         try {
             if (Platform.OS !== 'web') {
                 const permission = await Audio.requestPermissionsAsync();
@@ -95,7 +101,7 @@ export default function RecordScreen({ navigation }) {
 
             const note = {
                 id: Date.now().toString(),
-                title: `Voice Note ${new Date().toLocaleDateString()}`,
+                title: recordingName.trim(),
                 uri,
                 date: new Date().toISOString(),
                 duration,
@@ -118,6 +124,14 @@ export default function RecordScreen({ navigation }) {
 
     return (
         <View style={styles.container}>
+            <TextInput
+                style={styles.input}
+                placeholder="Enter recording name..."
+                value={recordingName}
+                onChangeText={setRecordingName}
+                editable={!isRecording}
+                placeholderTextColor={colors.textSecondary}
+            />
             <View style={styles.durationContainer}>
                 <Text style={styles.durationText}>
                     {formatDuration(duration)}
@@ -146,6 +160,18 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    input: {
+        width: '80%',
+        height: 50,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 8,
+        paddingHorizontal: theme.spacing.md,
+        marginBottom: theme.spacing.xl,
+        fontSize: 16,
+        color: colors.text,
+        backgroundColor: colors.background,
     },
     durationContainer: {
         marginBottom: theme.spacing.xl,
