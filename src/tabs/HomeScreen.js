@@ -1,13 +1,15 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { theme } from '../constants/theme';
 import VoiceNoteItem from '../components/VoiceNoteItem';
 import { useAudio } from '../context/AudioContext';
+import { SearchBar } from '../components/SearchBar';
 
 const HomeScreen = ({ navigation }) => {
     const { voiceNotes, isLoading, loadVoiceNotes, deleteVoiceNote } = useAudio();
+    const [filteredNotes, setFilteredNotes] = useState([]);
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
@@ -18,43 +20,20 @@ const HomeScreen = ({ navigation }) => {
     }, [navigation]);
 
 
+    const handleSearch = (query) => {
+        if (!query.trim()) {
+            setFilteredNotes(voiceNotes);
+            return;
+        }
+        
+        const filtered = voiceNotes.filter(note => 
+            note.title.toLowerCase().includes(query.toLowerCase())
+        );
+        setFilteredNotes(filtered);
+    };
+
+
     return (
-        // <View style={styles.container}>
-        // <View style={styles.header}>
-            
-        //     <Text style={styles.title}>Voice Note</Text>
-        //     <Text style={styles.subtitle}>Your personal audio journal</Text>
-        // </View>
-
-        // <View style={styles.content}>
-        //     <Text style={styles.description}>
-        //     Voice Note is a simple and easy-to-use voice recording app. 
-        //     Record your thoughts, ideas, or reminders on the go, and
-        //     access them whenever you need them.
-        //     </Text>
-
-        //     <TouchableOpacity
-        //     style={styles.recordButton}
-        //     onPress={() => navigation.navigate('Record')}
-        //     >
-        //     <Ionicons name="mic" size={24} color="white" />
-        //     <Text style={styles.recordButtonText}>Start Recording</Text>
-        //     </TouchableOpacity>
-
-        //     <Text style={styles.subtext}>
-        //     Tap the microphone button to begin recording your first voice note.
-        //     </Text>
-
-        //     <TouchableOpacity
-        //     style={styles.listButton}
-        //     onPress={() => navigation.navigate('VoiceNotes')}
-        //     >
-        //     <Ionicons name="list" size={24} color={colors.primary} />
-        //     <Text style={styles.listButtonText}>View Voice Notes</Text>
-        //     </TouchableOpacity>
-        // </View>
-        // </View>
-
         <View style={styles.container}>
             {isLoading ? (
                 <View style={styles.loadingContainer}>
@@ -82,8 +61,9 @@ const HomeScreen = ({ navigation }) => {
                 </View>
             ) : (
                 <>
+                <SearchBar onSearch={handleSearch} />
                 {<FlatList
-                    data={voiceNotes}
+                    data={filteredNotes}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
                         <VoiceNoteItem
