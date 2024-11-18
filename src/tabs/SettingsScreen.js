@@ -4,12 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../constants/colors';
 import { theme } from '../constants/theme';
+import { useSettings } from '../context/SettingContext';
 
 
 export default function SettingsScreen() {
     const [highQualityRecording, setHighQualityRecording] = useState(true);
     const [autoSave, setAutoSave] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
+    const { settings, updateSettings } = useSettings();
 
 
     // Load settings when component mounts
@@ -48,6 +50,7 @@ export default function SettingsScreen() {
 
     const handleHighQualityChange = (value) => {
         setHighQualityRecording(value);
+        updateSettings('highQualityRecording', value);
         saveSettings('highQualityRecording', value);
     };
 
