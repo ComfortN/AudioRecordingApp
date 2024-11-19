@@ -157,6 +157,7 @@ export default function VoiceNoteItem({ note, onDelete }) {
     };
 
     const handleDelete = async () => {
+        console.log('Deleting note...');
         try {
             // Stop playback before deleting
             if (sound) {
@@ -176,32 +177,41 @@ export default function VoiceNoteItem({ note, onDelete }) {
             } else if (note.uri.startsWith('file://')) {
                 await FileSystem.deleteAsync(note.uri, { idempotent: true });
             }
-            
+            console.log('Note deleted successfully');
             onDelete();
         } catch (error) {
             console.error('Error deleting file:', error);
             // Still proceed with the delete even if file deletion fails
+            console.error('Error deleting file:', error);
             onDelete();
         }
     };
 
     const confirmDelete = () => {
-        Alert.alert(
-            'Delete Voice Note',
-            'Are you sure you want to delete this voice note?',
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Delete',
-                    onPress: handleDelete,
-                    style: 'destructive',
-                },
-            ]
-        );
+        if (Platform.OS === 'web') {
+            const isConfirmed = window.confirm('Are you sure you want to delete this voice note?');
+            if (isConfirmed) {
+                handleDelete();
+            }
+        } else {
+            Alert.alert(
+                'Delete Voice Note',
+                'Are you sure you want to delete this voice note?',
+                [
+                    {
+                        text: 'Cancel',
+                        style: 'cancel',
+                    },
+                    {
+                        text: 'Delete',
+                        onPress: handleDelete,
+                        style: 'destructive',
+                    },
+                ]
+            );
+        }
     };
+    
 
     return (
         <View style={styles.container}>
