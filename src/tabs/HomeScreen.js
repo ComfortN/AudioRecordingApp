@@ -33,6 +33,16 @@ const HomeScreen = ({ navigation }) => {
     };
 
 
+    const handleDelete = async (id) => {
+        const success = await deleteVoiceNote(id);
+        if (success) {
+            // Deletion was successful, update filtered notes immediately
+            const newFilteredNotes = filteredNotes.filter(note => note.id !== id);
+            setFilteredNotes(newFilteredNotes);
+        }
+    };
+
+
     return (
         <View style={styles.container}>
             {isLoading ? (
@@ -68,7 +78,7 @@ const HomeScreen = ({ navigation }) => {
                     renderItem={({ item }) => (
                         <VoiceNoteItem
                         note={item}
-                        onDelete={() => deleteVoiceNote(item.id)}
+                        onDelete={() => handleDelete(item.id)}
                         />
                     )}
                     contentContainerStyle={styles.listContainer} />

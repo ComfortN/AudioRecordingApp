@@ -33,19 +33,40 @@ export default function VoiceNoteItem({ note, onDelete }) {
     // Cleanup effect
     useEffect(() => {
         return () => {
-            if (sound) {
-                sound.unloadAsync().catch(console.error);
-            }
+            const unloadSound = async () => {
+                if (sound) {
+                    await sound.unloadAsync();
+                }
+            };
+            unloadSound();
         };
     }, [sound]);
 
     const getAudioUri = async (uri) => {
         try {
             if (Platform.OS === 'web') {
+                // If it's already a blob URL, validate it
+                if (uri.startsWith('blob:')) {
+                    try {
+                        const response = await fetch(uri);
+                        if (!response.ok) {
+                            throw new Error('Invalid blob URL');
+                        }
+                        return uri;
+                    } catch (error) {
+                        console.error('Blob URL validation failed, attempting conversion:', error);
+                        // If validation fails, try to recreate blob
+                        if (note.audioData) {
+                            const blob = await base64ToBlob(note.audioData);
+                            return URL.createObjectURL(blob);
+                        }
+                    }
+                }
+                
+                // If it's not a blob URL, attempt to create one
                 const response = await fetch(uri);
                 const blob = await response.blob();
-                const objectUrl = URL.createObjectURL(blob);
-                return objectUrl;
+                return URL.createObjectURL(blob);
             } else {
                 // For native platforms, validate the file path
                 if (uri.startsWith('file://')) {
@@ -64,33 +85,42 @@ export default function VoiceNoteItem({ note, onDelete }) {
 
     const loadSound = async () => {
         try {
+            // Unload any existing sound
             if (sound) {
                 await sound.unloadAsync();
             }
-
+    
             const audioUri = await getAudioUri(note.uri);
             
             const { sound: audioSound } = await Audio.Sound.createAsync(
                 { uri: audioUri },
-                { shouldPlay: false },
+                { 
+                    shouldPlay: false,
+                    progressUpdateIntervalMillis: 500 // Optional: for smoother progress tracking
+                },
                 onPlaybackStatusUpdate
             );
             
             setSound(audioSound);
-
+    
             // Get and set the duration
             const status = await audioSound.getStatusAsync();
             if (status.isLoaded) {
                 setDuration(status.durationMillis / 1000);
             }
-
+    
             // Clean up object URL on web
             if (Platform.OS === 'web' && audioUri !== note.uri) {
                 URL.revokeObjectURL(audioUri);
             }
+    
+            return audioSound;
         } catch (error) {
             console.error('Error loading sound:', error);
             Alert.alert('Error', 'Failed to load audio file');
+            setSound(null);
+            setIsPlaying(false);
+            return null;
         }
     };
 
@@ -108,42 +138,53 @@ export default function VoiceNoteItem({ note, onDelete }) {
 
     const onPlayPause = async () => {
         try {
+            // Validate audio URI before attempting to play
+            const audioUri = await getAudioUri(note.uri);
+    
+            // If no sound is loaded, load it first
             if (!sound) {
-                await loadSound();
-                const audioUri = await getAudioUri(note.uri);
                 const { sound: newSound } = await Audio.Sound.createAsync(
                     { uri: audioUri },
                     { shouldPlay: true },
                     onPlaybackStatusUpdate
                 );
+                
                 setSound(newSound);
                 setIsPlaying(true);
-
-                // Clean up object URL on web
-                if (Platform.OS === 'web' && audioUri !== note.uri) {
-                    URL.revokeObjectURL(audioUri);
-                }
                 return;
             }
-
+    
             const status = await sound.getStatusAsync();
-            if (status.isLoaded) {
-                if (isPlaying) {
-                    await sound.pauseAsync();
-                    setIsPlaying(false);
-                } else {
-                    await sound.playAsync();
-                    setIsPlaying(true);
-                }
+    
+            if (!status.isLoaded) {
+                // If sound is not loaded, reload and play
+                const { sound: reloadedSound } = await Audio.Sound.createAsync(
+                    { uri: audioUri },
+                    { shouldPlay: true },
+                    onPlaybackStatusUpdate
+                );
+                
+                setSound(reloadedSound);
+                setIsPlaying(true);
+                return;
+            }
+    
+            // If sound is already playing, pause it
+            if (isPlaying) {
+                await sound.pauseAsync();
+                setIsPlaying(false);
             } else {
-                // If sound is not loaded, reload it
-                await loadSound();
+                // If sound was paused or just finished, reset and play
+                if (status.positionMillis >= status.durationMillis) {
+                    await sound.setPositionAsync(0);
+                }
                 await sound.playAsync();
                 setIsPlaying(true);
             }
         } catch (error) {
             console.error('Error playing/pausing:', error);
             Alert.alert('Error', 'Failed to play audio file');
+            
             // Reset states on error
             setIsPlaying(false);
             setSound(null);

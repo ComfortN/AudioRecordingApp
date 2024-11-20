@@ -13,7 +13,7 @@ export default function RecordScreen({ navigation }) {
     const [isRecording, setIsRecording] = useState(false);
     const [duration, setDuration] = useState(0);
     const [recordingName, setRecordingName] = useState('');
-    const { saveVoiceNote } = useAudio();
+    const { saveVoiceNote, loadVoiceNotes } = useAudio();
     const { settings } = useSettings();
     
     // Cleanup effect
@@ -108,6 +108,7 @@ export default function RecordScreen({ navigation }) {
             };
 
             await saveVoiceNote(note);
+            await loadVoiceNotes();
             setRecording(null);
             navigation.goBack();
         } catch (err) {
