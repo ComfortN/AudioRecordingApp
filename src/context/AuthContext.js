@@ -9,6 +9,7 @@ import {
   signInWithCredential,
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as Google from 'expo-auth-session/providers/google';
 import { auth } from '../config/firebase';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
@@ -23,7 +24,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-
+  
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: '',
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
