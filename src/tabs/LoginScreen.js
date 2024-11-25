@@ -28,7 +28,7 @@ export default function LoginScreen({ navigation }) {
 
     try {
       await login(email, password);
-      navigation.replace('Home');
+      navigation.replace('Record');
     } catch (error) {
       Alert.alert('Login Failed', error.message);
     }
@@ -37,7 +37,7 @@ export default function LoginScreen({ navigation }) {
   const handleGoogleSignIn = async () => {
     try {
       await googleSignIn();
-      navigation.replace('Home');
+      navigation.replace('Record');
     } catch (error) {
       Alert.alert('Google Sign-In Failed', error.message);
     }
