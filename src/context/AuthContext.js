@@ -8,14 +8,22 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from 'firebase/auth';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth } from '../config/firebase';
 import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from 'expo-web-browser';
+
+
+WebBrowser.maybeCompleteAuthSession();
 
 const AuthContext = createContext({});
+const storage = getStorage();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -23,7 +31,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
       
       if (user) {
-        // Store user token securely
         await SecureStore.setItemAsync('userToken', await user.getIdToken());
       } else {
         await SecureStore.deleteItemAsync('userToken');
@@ -32,6 +39,16 @@ export const AuthProvider = ({ children }) => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential).catch((error) => {
+        console.error('Firebase Google Sign-In error:', error);
+      });
+    }
+  }, [response]);
 
   const register = async (email, password, displayName) => {
     try {
@@ -56,31 +73,12 @@ export const AuthProvider = ({ children }) => {
 
   const googleSignIn = async () => {
     try {
-      // Trigger Google Sign-In
-      const { authentication } = await Google.signInAsync({
-        clientId: 'YOUR_GOOGLE_CLIENT_ID',
-      });
-
-      // Create a credential from the access token
-      const credential = GoogleAuthProvider.credential(
-        authentication.idToken,
-        authentication.accessToken
-      );
-
-      // Sign in with credential
-      const userCredential = await signInWithCredential(auth, credential);
-      return userCredential.user;
+      const result = await promptAsync();
+      if (result.type !== 'success') {
+        throw new Error('Google Sign-In was canceled or failed');
+      }
     } catch (error) {
       console.error('Google Sign-In error:', error);
-      throw error;
-    }
-  };
-
-  const resetPassword = async (email) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error) {
-      console.error('Password reset error:', error);
       throw error;
     }
   };
@@ -94,6 +92,44 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+  const updateUserProfile = async (profileUpdates) => {
+    try {
+      if (!auth.currentUser) {
+        throw new Error('No user is currently signed in.');
+      }
+  
+      // Update user profile in Firebase
+      await updateProfile(auth.currentUser, profileUpdates);
+  
+      // Update the local state to reflect the changes
+      setUser({ ...auth.currentUser, ...profileUpdates });
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  };
+
+
+  const uploadProfileImage = async (uri) => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      const filename = `profile-photos/${auth.currentUser.uid}/profile-image.jpg`;
+      const storageRef = ref(storage, filename);
+      
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+  
+
   return (
     <AuthContext.Provider 
       value={{ 
@@ -103,7 +139,8 @@ export const AuthProvider = ({ children }) => {
         login, 
         logout, 
         googleSignIn,
-        resetPassword 
+        updateUserProfile,
+        uploadProfileImage
       }}
     >
       {children}
