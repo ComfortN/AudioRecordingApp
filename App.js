@@ -56,7 +56,7 @@
 
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native'; // Added Alert
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './src/tabs/HomeScreen';
@@ -65,6 +65,8 @@ import SettingsScreen from './src/tabs/SettingsScreen';
 import LoginScreen from './src/tabs/LoginScreen';
 import RegisterScreen from './src/tabs/RegisterScreen';
 import ProfileScreen from './src/tabs/ProfileScreen';
+import EditProfileScreen from './src/tabs/EditProfileScreen.';
+import SplashScreen from './src/tabs/SplashScreen';
 import { AudioProvider } from './src/context/AudioContext';
 import { SettingsProvider } from './src/context/SettingContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -75,6 +77,11 @@ const Stack = createNativeStackNavigator();
 
 function NavigationContent() {
   const { user, loading } = useAuth();
+  const [isSplashComplete, setSplashComplete] = useState(false);
+
+  if (!isSplashComplete) {
+    return <SplashScreen onFinish={() => setSplashComplete(true)} />;
+  }
 
   if (loading) {
     return null;
@@ -123,20 +130,6 @@ function NavigationContent() {
               headerRight: () => (
                 <View style={styles.headerButtons}>
                   <TouchableOpacity 
-                    onPress={() => handleSettingsPress(navigation)}
-                    style={[styles.headerButton, styles.touchableFeedback]}
-                    activeOpacity={0.5}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <View style={styles.iconContainer}>
-                      <Ionicons 
-                        name="settings-outline" 
-                        size={24} 
-                        color={colors.background} 
-                      />
-                    </View>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
                     onPress={() => handleProfilePress(navigation)}
                     style={[styles.headerButton, styles.touchableFeedback]}
                     activeOpacity={0.5}
@@ -144,12 +137,13 @@ function NavigationContent() {
                   >
                     <View style={styles.iconContainer}>
                       <Ionicons 
-                        name="person-circle-outline" 
+                        name="ellipsis-vertical" 
                         size={24} 
                         color={colors.background} 
                       />
                     </View>
                   </TouchableOpacity>
+                  
                 </View>
               ),
             })}
@@ -168,6 +162,11 @@ function NavigationContent() {
             name="Profile" 
             component={ProfileScreen} 
             options={{ title: 'Profile' }} 
+          />
+          <Stack.Screen 
+            name="EditProfile" 
+            component={EditProfileScreen} 
+            options={{ title: 'Edit Profile' }} 
           />
         </>
       ) : (

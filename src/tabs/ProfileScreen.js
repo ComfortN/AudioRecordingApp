@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -16,29 +17,39 @@ export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout();
-              // Navigation will automatically redirect to Login due to auth state change
-            } catch (error) {
-              Alert.alert('Error', error.message);
-            }
+    if (Platform.OS === 'web') {
+      const confirm = window.confirm('Are you sure you want to logout?');
+      if (confirm) {
+        try {
+          await logout();
+        } catch (error) {
+          window.alert(`Error: ${error.message}`);
+        }
+      }
+    } else {
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
           },
-        },
-      ],
-      { cancelable: true }
-    );
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await logout();
+              } catch (error) {
+                Alert.alert('Error', error.message);
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    }
   };
 
   return (
@@ -53,7 +64,8 @@ export default function ProfileScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem}
+          onPress={() => navigation.navigate('EditProfile')}>
           <Ionicons name="person-outline" size={24} color={colors.text} />
           <Text style={styles.menuText}>Edit Profile</Text>
           <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
