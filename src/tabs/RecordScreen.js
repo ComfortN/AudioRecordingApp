@@ -12,7 +12,7 @@ export default function RecordScreen({ navigation }) {
     const [recording, setRecording] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const [duration, setDuration] = useState(0);
-    const [recordingName, setRecordingName] = useState('');
+    const [recordingName, setRecordingName] = useState('Untitled Recording');
     const { saveVoiceNote, loadVoiceNotes } = useAudio();
     const { settings } = useSettings();
     
@@ -41,8 +41,7 @@ export default function RecordScreen({ navigation }) {
 
     const startRecording = async () => {
         if (!recordingName.trim()) {
-            Alert.alert('Name Required', 'Please enter a name for your recording');
-            return;
+            setRecordingName('Untitled Recording');
         }
 
         try {
@@ -99,9 +98,12 @@ export default function RecordScreen({ navigation }) {
                 throw new Error('No recording URI available');
             }
 
+            // Use default name if recordingName is empty
+            const finalName = recordingName.trim() || 'Untitled Recording'; 
+
             const note = {
                 id: Date.now().toString(),
-                title: recordingName.trim(),
+                title: finalName,
                 uri,
                 date: new Date().toISOString(),
                 duration,

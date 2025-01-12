@@ -140,6 +140,31 @@ export const AudioProvider = ({ children }) => {
         }
     };
 
+    const editVoiceNote = async (id, newTitle) => {
+        try {
+            // Find the note to edit
+            const noteToEdit = voiceNotes.find(note => note.id === id);
+            if (!noteToEdit) {
+                throw new Error('Note not found');
+            }
+    
+            // Update the title
+            const updatedNote = { ...noteToEdit, title: newTitle };
+    
+            // Update state
+            const updatedNotes = voiceNotes.map(note =>
+                note.id === id ? updatedNote : note
+            );
+            setVoiceNotes(updatedNotes);
+    
+            // Update local storage
+            await AsyncStorage.setItem('voiceNotes', JSON.stringify(updatedNotes));
+        } catch (error) {
+            console.error('Error editing voice note:', error);
+        }
+    };
+    
+
 
     // Cleanup function for web platform
     const cleanup = () => {
@@ -164,6 +189,7 @@ export const AudioProvider = ({ children }) => {
         loadVoiceNotes,
         saveVoiceNote,
         deleteVoiceNote,
+        editVoiceNote,
     };
 
     return (

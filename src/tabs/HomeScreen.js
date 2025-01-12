@@ -6,9 +6,12 @@ import { theme } from '../constants/theme';
 import VoiceNoteItem from '../components/VoiceNoteItem';
 import { useAudio } from '../context/AudioContext';
 import { SearchBar } from '../components/SearchBar';
+import { useSettings } from '../context/SettingContext';
 
 const HomeScreen = ({ navigation }) => {
-    const { voiceNotes, isLoading, loadVoiceNotes, deleteVoiceNote } = useAudio();
+    const { settings } = useSettings();
+    const currentTheme = settings.darkMode ? colors.dark : colors.light;
+    const { voiceNotes, isLoading, loadVoiceNotes, deleteVoiceNote, editVoiceNote } = useAudio();
     const [filteredNotes, setFilteredNotes] = useState([]);
 
     useEffect(() => {
@@ -18,6 +21,11 @@ const HomeScreen = ({ navigation }) => {
 
         return unsubscribe;
     }, [navigation]);
+
+
+    useEffect(() => {
+        setFilteredNotes(voiceNotes);
+    }, [voiceNotes]);
 
 
     const handleSearch = (query) => {
@@ -44,61 +52,65 @@ const HomeScreen = ({ navigation }) => {
 
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
             {isLoading ? (
                 <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size="large" color={currentTheme.primary} />
                 </View>
             ) : voiceNotes.length === 0 ? (
                 <View style={styles.content}>
-                    <Text style={styles.title}>Voice Note</Text>
-                    <Text style={styles.subtitle}>Your personal audio journal</Text>
-                    <Text style={styles.description}>
+                    <Text style={[styles.title, { color: currentTheme.text }]}>Voice Note</Text>
+                    <Text style={[styles.subtitle, { color: currentTheme.textSecondary }]}>
+                        Your personal audio journal
+                    </Text>
+                    <Text style={[styles.description, { color: currentTheme.text }]}>
                         Voice Note is a simple and easy-to-use voice recording app. Record your thoughts, ideas, or reminders on the go, and access them whenever you need them.
                     </Text>
                     
                     <TouchableOpacity
-                        style={styles.recordButton}
+                        style={[styles.recordButton, { backgroundColor: currentTheme.accent }]}
                         onPress={() => navigation.navigate('Record')}
                     >
-                        <Ionicons name="mic" size={24} color={colors.background} />
-                        <Text style={styles.recordButtonText}>Start Recording</Text>
+                        <Ionicons name="mic" size={24} color={currentTheme.background} />
+                        <Text style={[styles.recordButtonText, { color: currentTheme.background }]}>
+                            Start Recording
+                        </Text>
                     </TouchableOpacity>
                     
-                    <Text style={styles.subtext}>
+                    <Text style={[styles.subtext, { color: currentTheme.textSecondary }]}>
                         Tap the microphone button to begin recording your first voice note.
                     </Text>
                 </View>
             ) : (
                 <>
-                <SearchBar onSearch={handleSearch} />
-                {<FlatList
-                    data={filteredNotes}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <VoiceNoteItem
-                        note={item}
-                        onDelete={() => handleDelete(item.id)}
-                        />
-                    )}
-                    contentContainerStyle={styles.listContainer} />
-                }
-                <TouchableOpacity
-                    style={styles.fab}
-                    onPress={() => navigation.navigate('Record')}
-                >
-                    <Ionicons name="mic" size={24} color={colors.background} />
-                </TouchableOpacity>
+                    <SearchBar onSearch={handleSearch} />
+                    <FlatList
+                        data={filteredNotes}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => (
+                            <VoiceNoteItem
+                                note={item}
+                                onDelete={() => handleDelete(item.id)}
+                                onEdit={(newTitle) => editVoiceNote(item.id, newTitle)}
+                            />
+                        )}
+                        contentContainerStyle={styles.listContainer}
+                    />
+                    <TouchableOpacity
+                        style={[styles.fab, { backgroundColor: currentTheme.primary }]}
+                        onPress={() => navigation.navigate('Record')}
+                    >
+                        <Ionicons name="mic" size={24} color={currentTheme.background} />
+                    </TouchableOpacity>
                 </>
             )}
-    </View>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     loadingContainer: {
         flex: 1,
@@ -114,17 +126,14 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: colors.text,
         marginBottom: theme.spacing.sm
     },
     subtitle: {
         fontSize: 16,
-        color: colors.textSecondary,
         marginBottom: theme.spacing.lg,
     },
     description: {
         fontSize: 16,
-        color: colors.text,
         marginBottom: theme.spacing.md,
         textAlign: 'center',
     },
@@ -132,7 +141,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primary,
         borderRadius: 8,
         paddingVertical: theme.spacing.md,
         marginVertical: theme.spacing.md,
@@ -140,12 +148,10 @@ const styles = StyleSheet.create({
     recordButtonText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: colors.background,
         marginLeft: theme.spacing.sm,
     },
     subtext: {
         fontSize: 14,
-        color: colors.textSecondary,
         textAlign: 'center',
     },
     listButton: {
@@ -156,7 +162,6 @@ const styles = StyleSheet.create({
     },
     listButtonText: {
         fontSize: 16,
-        color: colors.primary,
         marginLeft: theme.spacing.sm,
     },
     listContainer: {
@@ -169,7 +174,6 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 4,

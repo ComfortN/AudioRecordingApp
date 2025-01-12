@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform, Modal, TextInput } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { theme } from '../constants/theme';
+import { useSettings } from '../context/SettingContext';
 
-export default function VoiceNoteItem({ note, onDelete }) {
+export default function VoiceNoteItem({ note, onDelete, onEdit }) {
     const [sound, setSound] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
     const [position, setPosition] = useState(0);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(note.title);
+    const { settings } = useSettings();
+    const currentTheme = settings.darkMode ? colors.dark : colors.light;
 
     // Initialize audio session when component mounts
     useEffect(() => {
@@ -41,6 +46,11 @@ export default function VoiceNoteItem({ note, onDelete }) {
             unloadSound();
         };
     }, [sound]);
+
+    // Reset editedTitle when note changes
+    useEffect(() => {
+        setEditedTitle(note.title);
+    }, [note.title]);
 
     const getAudioUri = async (uri) => {
         try {
@@ -254,30 +264,68 @@ export default function VoiceNoteItem({ note, onDelete }) {
     };
     
 
+    const handleEdit = () => {
+        if (editedTitle.trim() !== '') {
+            onEdit(editedTitle);
+            setIsEditing(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setIsEditing(false);
+    };
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { 
+            backgroundColor: currentTheme.background,
+            borderBottomColor: currentTheme.border 
+        }]}>
             <TouchableOpacity 
-                style={styles.playButton} 
+                style={[styles.playButton, { backgroundColor: currentTheme.border }]} 
                 onPress={onPlayPause}
             >
                 <Ionicons
                     name={isPlaying ? 'pause' : 'play'}
                     size={24}
-                    color={colors.primary}
+                    color={currentTheme.primary}
                 />
             </TouchableOpacity>
             
             <View style={styles.noteInfo}>
-                <Text style={styles.title}>{note.title}</Text>
+                {isEditing ? (
+                    <TextInput
+                        style={[styles.titleInput, { 
+                            color: currentTheme.primary,
+                            borderColor: currentTheme.primary 
+                        }]}
+                        value={editedTitle}
+                        onChangeText={setEditedTitle}
+                    />
+                ) : (
+                    <Text style={[styles.title, { color: currentTheme.text }]}>
+                        {note.title}
+                    </Text>
+                )}
                 <View style={styles.detailsRow}>
-                    <Text style={styles.date}>
+                    <Text style={[styles.date, { color: currentTheme.textSecondary }]}>
                         {new Date(note.date).toLocaleDateString()}
                     </Text>
-                    <Text style={styles.duration}>
+                    <Text style={[styles.duration, { color: currentTheme.textSecondary }]}>
                         {formatTime(isPlaying ? position : (note.duration || duration))}
                     </Text>
                 </View>
             </View>
+
+            <TouchableOpacity 
+                style={styles.editButton} 
+                onPress={() => setIsEditing(!isEditing)}
+            >
+                <Ionicons 
+                    name="pencil" 
+                    size={24} 
+                    color={currentTheme.accent} 
+                />
+            </TouchableOpacity>
 
             <TouchableOpacity 
                 style={styles.deleteButton} 
@@ -286,9 +334,48 @@ export default function VoiceNoteItem({ note, onDelete }) {
                 <Ionicons 
                     name="trash-outline" 
                     size={24} 
-                    color={colors.accent} 
+                    color={currentTheme.accent} 
                 />
             </TouchableOpacity>
+
+            <Modal visible={isEditing} animationType="fade" transparent={true}>
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { 
+                        backgroundColor: currentTheme.background 
+                    }]}>
+                        <TextInput 
+                            style={[styles.modalInput, {
+                                borderBottomColor: currentTheme.border,
+                                color: currentTheme.text
+                            }]}
+                            value={editedTitle}
+                            onChangeText={setEditedTitle}
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity 
+                                style={[styles.saveButton, { 
+                                    backgroundColor: currentTheme.primary 
+                                }]} 
+                                onPress={handleEdit}
+                            >
+                                <Text style={[styles.saveButtonText, { 
+                                    color: currentTheme.background 
+                                }]}>Save</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.closeButton, { 
+                                    backgroundColor: currentTheme.border 
+                                }]} 
+                                onPress={handleCloseModal}
+                            >
+                                <Text style={[styles.closeButtonText, { 
+                                    color: currentTheme.text 
+                                }]}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -298,15 +385,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         padding: theme.spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border,
         alignItems: 'center',
-        backgroundColor: colors.background,
     },
     playButton: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: colors.border,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: theme.spacing.md,
@@ -317,8 +401,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: '500',
-        color: colors.text,
         marginBottom: theme.spacing.xs,
+    },
+    titleInput: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        borderBottomWidth: 1,
+        paddingVertical: 5,
     },
     detailsRow: {
         flexDirection: 'row',
@@ -326,14 +415,59 @@ const styles = StyleSheet.create({
     },
     date: {
         fontSize: 12,
-        color: colors.textSecondary,
         marginRight: theme.spacing.md,
     },
     duration: {
         fontSize: 12,
-        color: colors.textSecondary,
+    },
+    editButton: {
+        padding: 10,
     },
     deleteButton: {
         padding: theme.spacing.sm,
     },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: 300,
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalInput: {
+        borderBottomWidth: 1,
+        width: '100%',
+        marginBottom: 20,
+        fontSize: 18,
+        paddingVertical: 5,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    saveButton: {
+        padding: 10,
+        borderRadius: 5,
+        flex: 1,
+        alignItems: 'center',
+    },
+    saveButtonText: {
+        fontSize: 18,
+    },
+    closeButton: {
+        padding: 10,
+        marginLeft: 10,
+        borderRadius: 5,
+        flex: 1,
+        alignItems: 'center',
+    },
+    closeButtonText: {
+        fontSize: 18,
+    },
+
 });
