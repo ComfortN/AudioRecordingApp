@@ -13,6 +13,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { colors } from '../../src/constants/colors';
 import { theme } from '../../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useSettings } from '../context/SettingContext';
 
 export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -20,6 +21,8 @@ export default function RegisterScreen({ navigation }) {
   const [displayName, setDisplayName] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { register } = useAuth();
+  const { settings } = useSettings();
+  const currentTheme = settings.darkMode ? colors.dark : colors.light;
 
   const handleRegister = async () => {
     if (!email || !password || !displayName) {
@@ -37,41 +40,41 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, { backgroundColor: currentTheme.background}]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Voice Note</Text>
-        <Text style={styles.subtitle}>Create your account</Text>
+        <Text style={[styles.title, { color: currentTheme.text}]}>Voice Note</Text>
+        <Text style={[styles.subtitle, { color: currentTheme.textSecondary}]}>Create your account</Text>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderColor: currentTheme.border}]}>
           <Ionicons 
             name="person-outline" 
             size={24} 
-            color={colors.textSecondary} 
+            color={currentTheme.textSecondary} 
             style={styles.icon} 
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: currentTheme.text}]}
             placeholder="Full Name"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={currentTheme.textSecondary}
             value={displayName}
             onChangeText={setDisplayName}
             autoCapitalize="words"
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderColor: currentTheme.border}]}>
           <Ionicons 
             name="mail-outline" 
             size={24} 
-            color={colors.textSecondary} 
+            color={currentTheme.textSecondary} 
             style={styles.icon} 
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: currentTheme.text}]}
             placeholder="Email"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={currentTheme.textSecondary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -79,17 +82,17 @@ export default function RegisterScreen({ navigation }) {
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderColor: currentTheme.border}]}>
           <Ionicons 
             name="lock-closed-outline" 
             size={24} 
-            color={colors.textSecondary} 
+            color={currentTheme.textSecondary} 
             style={styles.icon} 
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: currentTheme.text}]}
             placeholder="Password"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={currentTheme.textSecondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!isPasswordVisible}
@@ -102,22 +105,22 @@ export default function RegisterScreen({ navigation }) {
             <Ionicons 
               name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
               size={24} 
-              color={colors.textSecondary} 
+              color={currentTheme.textSecondary} 
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
-          style={styles.registerButton} 
+          style={[styles.registerButton, { backgroundColor: currentTheme.primary}]} 
           onPress={handleRegister}
         >
-          <Text style={styles.registerButtonText}>Create Account</Text>
+          <Text style={[styles.registerButtonText, { color: currentTheme.text}]}>Create Account</Text>
         </TouchableOpacity>
 
         <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
+          <Text style={[styles.footerText, { color: currentTheme.textSecondary}]}>Already have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}>Login</Text>
+            <Text style={[styles.loginLink, { color: currentTheme.text}]}>Login</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -128,7 +131,6 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
   },
   content: {
@@ -137,13 +139,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: colors.primary,
     textAlign: 'center',
     marginBottom: theme.spacing.md,
   },
   subtitle: {
     fontSize: 18,
-    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
   },
@@ -162,20 +162,17 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 50,
-    color: colors.text,
   },
   visibilityToggle: {
     padding: theme.spacing.sm,
   },
   registerButton: {
-    backgroundColor: colors.primary,
     borderRadius: 8,
     paddingVertical: theme.spacing.md,
     alignItems: 'center',
     marginTop: theme.spacing.md,
   },
   registerButtonText: {
-    color: colors.background,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -185,10 +182,9 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.lg,
   },
   footerText: {
-    color: colors.textSecondary,
+    // color: colors.textSecondary,
   },
   loginLink: {
-    color: colors.primary,
     fontWeight: 'bold',
   },
 });

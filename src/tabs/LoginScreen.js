@@ -13,12 +13,16 @@ import { useAuth } from '../../src/context/AuthContext';
 import { colors } from '../../src/constants/colors';
 import { theme } from '../../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useSettings } from '../context/SettingContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { login, googleSignIn } = useAuth();
+  const { settings } = useSettings();
+  const currentTheme = settings.darkMode ? colors.dark : colors.light;
+  
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -45,24 +49,24 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, { backgroundColor: currentTheme.background}]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Voice Note</Text>
-        <Text style={styles.subtitle}>Login to your account</Text>
+        <Text style={[styles.title, { color: currentTheme.text}]}>Reflectory Voice Note</Text>
+        <Text style={[styles.subtitle, { color: currentTheme.textSecondary}]}>Login to your account</Text>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderColor: currentTheme.border}]}>
           <Ionicons 
             name="mail-outline" 
             size={24} 
-            color={colors.textSecondary} 
+            color={currentTheme.textSecondary} 
             style={styles.icon} 
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: currentTheme.text}]}
             placeholder="Email"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={currentTheme.textSecondary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -70,17 +74,17 @@ export default function LoginScreen({ navigation }) {
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderColor: currentTheme.border}]}>
           <Ionicons 
             name="lock-closed-outline" 
             size={24} 
-            color={colors.textSecondary} 
+            color={currentTheme.textSecondary} 
             style={styles.icon} 
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: currentTheme.text}]}
             placeholder="Password"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={currentTheme.textSecondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!isPasswordVisible}
@@ -93,40 +97,40 @@ export default function LoginScreen({ navigation }) {
             <Ionicons 
               name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
               size={24} 
-              color={colors.textSecondary} 
+              color={currentTheme.textSecondary} 
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
-          style={styles.loginButton} 
+          style={[styles.loginButton, { backgroundColor: currentTheme.primary}]} 
           onPress={handleLogin}
         >
-          <Text style={styles.loginButtonText}>Login</Text>
+          <Text style={[styles.loginButtonText, { color: currentTheme.text}]}>Login</Text>
         </TouchableOpacity>
 
         <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
+          <View style={[styles.dividerLine, { backgroundColor: currentTheme.border}]} />
+          <Text style={[styles.dividerText, { color: currentTheme.textSecondary}]}>OR</Text>
+          <View style={[styles.dividerLine, { backgroundColor: currentTheme.text}]} />
         </View>
 
         <TouchableOpacity 
-          style={styles.googleButton} 
+          style={[styles.googleButton, { backgroundColor: currentTheme.accent}]} 
           onPress={handleGoogleSignIn}
         >
           <Ionicons 
             name="logo-google" 
             size={24} 
-            color={colors.background} 
+            color={currentTheme.background} 
           />
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
+          <Text style={[styles.googleButtonText, { color: currentTheme.text}]}>Continue with Google</Text>
         </TouchableOpacity>
 
         <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={[styles.footerText, { color: currentTheme.textSecondary}]}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.registerLink}>Register</Text>
+            <Text style={[styles.registerLink, { color: currentTheme.text}]}>Register</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -137,7 +141,6 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
   },
   content: {
@@ -146,13 +149,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: colors.primary,
     textAlign: 'center',
     marginBottom: theme.spacing.md,
   },
   subtitle: {
     fontSize: 18,
-    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
   },
@@ -160,7 +161,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 8,
     marginBottom: theme.spacing.md,
     paddingHorizontal: theme.spacing.md,
@@ -171,20 +171,17 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 50,
-    color: colors.text,
   },
   visibilityToggle: {
     padding: theme.spacing.sm,
   },
   loginButton: {
-    backgroundColor: colors.primary,
     borderRadius: 8,
     paddingVertical: theme.spacing.md,
     alignItems: 'center',
     marginTop: theme.spacing.md,
   },
   loginButtonText: {
-    color: colors.background,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -196,11 +193,9 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
   },
   dividerText: {
     marginHorizontal: theme.spacing.md,
-    color: colors.textSecondary,
   },
   googleButton: {
     backgroundColor: colors.accent,
@@ -211,7 +206,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   googleButtonText: {
-    color: colors.background,
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: theme.spacing.sm,
