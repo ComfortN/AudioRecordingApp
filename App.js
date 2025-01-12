@@ -1,64 +1,9 @@
-// import { StatusBar } from 'expo-status-bar';
-// import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-// import React from 'react';
-// import { NavigationContainer } from '@react-navigation/native';
-// import { createNativeStackNavigator } from '@react-navigation/native-stack';
-// import HomeScreen from './src/tabs/HomeScreen';
-// import RecordScreen from './src/tabs/RecordScreen';
-// import SettingsScreen from './src/tabs/SettingsScreen';
-// import { AudioProvider } from './src/context/AudioContext';
-// import { SettingsProvider } from './src/context/SettingContext';
-// import { colors } from './src/constants/colors';
-// import { Ionicons } from '@expo/vector-icons';
-
-// const Stack = createNativeStackNavigator();
-
-// export default function App() {
-//   return (
-//     <AudioProvider>
-//       <SettingsProvider>
-//         <NavigationContainer>
-//           <StatusBar style="light" />
-//           <Stack.Navigator
-//             screenOptions={{
-//               headerStyle: {
-//                 backgroundColor: colors.primary,
-//               },
-//               headerTintColor: colors.background,
-//               headerTitleStyle: {
-//                 fontWeight: 'bold',
-//               },
-//             }}
-//           >
-//             <Stack.Screen name="Home" component={HomeScreen} options={({ navigation }) => ({
-//                 title: 'Voice Notes',
-//                 headerRight: () => (
-//                   <TouchableOpacity 
-//                     onPress={() => navigation.navigate('Settings')}
-//                     style={{ marginRight: 15 }}
-//                   >
-//                     <Ionicons name="settings-outline" size={24} color={colors.background} />
-//                   </TouchableOpacity>
-//                 ),
-//               })}
-//             />
-//             <Stack.Screen name="Record" component={RecordScreen} options={{ title: 'Record Note' }} />
-//             <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
-//           </Stack.Navigator>
-//         </NavigationContainer>
-//         </SettingsProvider>
-//       </AudioProvider>
-//   );
-// }
-
-
-
-
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native'; // Added Alert
+import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useSettings } from './src/context/SettingContext';
 import HomeScreen from './src/tabs/HomeScreen';
 import RecordScreen from './src/tabs/RecordScreen';
 import SettingsScreen from './src/tabs/SettingsScreen';
@@ -67,6 +12,7 @@ import RegisterScreen from './src/tabs/RegisterScreen';
 import ProfileScreen from './src/tabs/ProfileScreen';
 import EditProfileScreen from './src/tabs/EditProfileScreen.';
 import SplashScreen from './src/tabs/SplashScreen';
+import HelpSupportScreen from './src/tabs/HelpSupportScreen';
 import { AudioProvider } from './src/context/AudioContext';
 import { SettingsProvider } from './src/context/SettingContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -77,7 +23,10 @@ const Stack = createNativeStackNavigator();
 
 function NavigationContent() {
   const { user, loading } = useAuth();
+  const { settings } = useSettings();
   const [isSplashComplete, setSplashComplete] = useState(false);
+
+  const currentTheme = settings.darkMode ? colors.dark : colors.light;
 
   if (!isSplashComplete) {
     return <SplashScreen onFinish={() => setSplashComplete(true)} />;
@@ -112,11 +61,14 @@ function NavigationContent() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: colors.primary,
+          backgroundColor: currentTheme.primary,
         },
-        headerTintColor: colors.background,
+        headerTintColor: currentTheme.headerColor,
         headerTitleStyle: {
           fontWeight: 'bold',
+        },
+        contentStyle: {
+          backgroundColor: currentTheme.background,
         },
       }}
     >
@@ -129,20 +81,18 @@ function NavigationContent() {
               title: 'Voice Notes',
               headerRight: () => (
                 <View style={styles.headerButtons}>
-                  <TouchableOpacity 
-                    onPress={() => handleProfilePress(navigation)}
+                  <TouchableOpacity
+                    onPress={() => {
+                      console.log('Navigating to Profile');
+                      navigation.navigate('Profile');
+                    }}
                     style={[styles.headerButton, styles.touchableFeedback]}
-                    activeOpacity={0.5}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <View style={styles.iconContainer}>
-                      <Ionicons 
-                        name="ellipsis-vertical" 
-                        size={24} 
-                        color={colors.background} 
-                      />
-                    </View>
-                  </TouchableOpacity>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="ellipsis-vertical" size={24} color={currentTheme.headerColor} />
+                  </View>
+                </TouchableOpacity>
                   
                 </View>
               ),
@@ -167,6 +117,11 @@ function NavigationContent() {
             name="EditProfile" 
             component={EditProfileScreen} 
             options={{ title: 'Edit Profile' }} 
+          />
+          <Stack.Screen
+            name='HelpSupport'
+            component={HelpSupportScreen}
+            options={{ title: 'Help & Support' }}
           />
         </>
       ) : (

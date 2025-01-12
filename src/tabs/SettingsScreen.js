@@ -8,16 +8,19 @@ import { useSettings } from '../context/SettingContext';
 
 
 export default function SettingsScreen() {
+    const { settings, updateSettings } = useSettings();
     const [highQualityRecording, setHighQualityRecording] = useState(true);
     const [autoSave, setAutoSave] = useState(true);
-    const [darkMode, setDarkMode] = useState(false);
-    const { settings, updateSettings } = useSettings();
+    const [darkMode, setDarkMode] = useState(settings.darkMode);
 
 
     // Load settings when component mounts
     React.useEffect(() => {
         loadSettings();
     }, []);
+
+    // Get current theme colors based on dark mode
+    const currentTheme = darkMode ? colors.dark : colors.light;
 
     const loadSettings = async () => {
         try {
@@ -64,6 +67,14 @@ export default function SettingsScreen() {
         saveSettings('darkMode', value);
     };
 
+    const handleSendFeedback = () => {
+        Linking.openURL('mailto:support@reflectory.com?subject=App Feedback');
+    };
+
+    const handleGetSupport = () => {
+        Linking.openURL('https://reflectory.com/support');
+    };
+
     const clearAllData = async () => {
         Alert.alert(
             'Clear All Data',
@@ -93,28 +104,28 @@ export default function SettingsScreen() {
     const renderSettingItem = (icon, title, description, value, onValueChange) => (
         <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
-                <View style={styles.iconContainer}>
-                    <Ionicons name={icon} size={24} color={colors.primary} />
+                <View style={[styles.iconContainer, {backgroundColor: currentTheme.border}]}>
+                    <Ionicons name={icon} size={24} color={currentTheme.primary} />
                 </View>
                 <View style={styles.settingText}>
-                    <Text style={styles.settingTitle}>{title}</Text>
-                    <Text style={styles.settingDescription}>{description}</Text>
+                    <Text style={[styles.settingTitle, {color: currentTheme.text}]}>{title}</Text>
+                    <Text style={[styles.settingDescription, {color: currentTheme.textSecondary}]}>{description}</Text>
                 </View>
             </View>
             <Switch
                 value={value}
                 onValueChange={onValueChange}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={colors.background}
+                trackColor={{ false: currentTheme.border, true: currentTheme.primary }}
+                thumbColor={currentTheme.background}
             />
         </View>
     );
 
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Recording Options</Text>
+        <ScrollView style={[styles.container, { backgroundColor: currentTheme.background}]}>
+            <View style={[styles.section, {borderBottomColor: currentTheme.border}]}>
+                <Text style={[styles.sectionTitle, {color: currentTheme.text}]}>Recording Options</Text>
                 {renderSettingItem(
                     'mic-outline',
                     'High Quality Recording',
@@ -131,8 +142,8 @@ export default function SettingsScreen() {
                 )}
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Appearance</Text>
+            <View style={[styles.section, {borderBottomColor: currentTheme.border}]}>
+                <Text style={[styles.sectionTitle, {color: currentTheme.text}]}>Appearance</Text>
                 {renderSettingItem(
                     'moon-outline',
                     'Dark Mode',
@@ -142,24 +153,33 @@ export default function SettingsScreen() {
                 )}
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Data Management</Text>
-                <TouchableOpacity style={styles.dangerButton} onPress={clearAllData}>
-                    <Ionicons name="trash-outline" size={24} color={colors.background} />
-                    <Text style={styles.dangerButtonText}>Clear All Voice Notes</Text>
+            <View style={[styles.section, {borderBottomColor: currentTheme.border}]}>
+                <Text style={[styles.sectionTitle, {color: currentTheme.text}]}>Data Management</Text>
+                <TouchableOpacity style={[styles.dangerButton, {backgroundColor: currentTheme.accent}]} onPress={clearAllData}>
+                    <Ionicons name="trash-outline" size={24} color={currentTheme.background} />
+                    <Text style={[styles.dangerButtonText, { color: currentTheme.background}]}>Clear All Voice Notes</Text>
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>About</Text>
+            <View style={[styles.section, {borderBottomColor: currentTheme.border}]}>
+                <Text style={[styles.sectionTitle, {color: currentTheme.text}]}>About</Text>
                 <View style={styles.aboutContainer}>
-                    <Text style={styles.version}>Version 1.0.0</Text>
-                    <TouchableOpacity style={styles.linkButton}>
-                        <Text style={styles.linkText}>Privacy Policy</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.linkButton}>
-                        <Text style={styles.linkText}>Terms of Service</Text>
-                    </TouchableOpacity>
+                    <Text style={[styles.version, {color: currentTheme.textSecondary}]}>Version 1.0.0</Text>
+                    <TouchableOpacity 
+                    style={styles.supportButton}
+                    onPress={handleSendFeedback}
+                >
+                    <Ionicons name="mail-outline" size={24} color={currentTheme.accent} />
+                    <Text style={[styles.supportButtonText, { color: currentTheme.text }]}>Send Feedback</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                    style={styles.supportButton}
+                    onPress={handleGetSupport}
+                >
+                    <Ionicons name="help-circle-outline" size={24} color={currentTheme.accent} />
+                    <Text style={[styles.supportButtonText, { color: currentTheme.text }]}>Get Support</Text>
+                </TouchableOpacity>
                 </View>
             </View>
         </ScrollView>
@@ -170,17 +190,14 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     section: {
         padding: theme.spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border,
     },
     sectionTitle: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: colors.text,
         marginBottom: theme.spacing.md,
     },
     settingItem: {
@@ -198,7 +215,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: colors.border,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: theme.spacing.md,
@@ -208,23 +224,19 @@ const styles = StyleSheet.create({
     },
     settingTitle: {
         fontSize: 16,
-        color: colors.text,
         marginBottom: 4,
     },
     settingDescription: {
         fontSize: 14,
-        color: colors.textSecondary,
     },
     dangerButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.accent,
         padding: theme.spacing.md,
         borderRadius: 8,
     },
     dangerButtonText: {
-        color: colors.background,
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: theme.spacing.sm,
@@ -234,14 +246,17 @@ const styles = StyleSheet.create({
     },
     version: {
         fontSize: 16,
-        color: colors.textSecondary,
         marginBottom: theme.spacing.md,
     },
-    linkButton: {
-        paddingVertical: theme.spacing.sm,
+    supportButton: {
+        alignItems: 'center',
+        padding: theme.spacing.md,
+        borderRadius: 8,
+        marginBottom: theme.spacing.sm,
     },
-    linkText: {
+    supportButtonText: {
         fontSize: 16,
-        color: colors.primary,
+        marginLeft: theme.spacing.sm,
     },
+
 });
